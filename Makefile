@@ -1,26 +1,27 @@
-.PHONY: clean
+.PHONY: clean docker-build docker-run test-curl
 
 FUNCTION_TARGET = function
 PORT = 8080
+IMAGE_NAME ?= kiss_services_ollama
+IMAGE_TAG ?= latest
+CONTAINER_NAME = kiss-ollama-service
+OLLAMA_MODELS_ARG ?= "gemma3:1b" # Default model to build with
 
-# bin/server.dart is the generated target for lib/functions.dart
-bin/server.dart:
-	dart run build_runner build --delete-conflicting-outputs
-
-build: bin/server.dart
-
-test: clean build
-	dart test
-
+# Target to stop and remove the ollama container and image
 clean:
-	dart run build_runner clean
-	rm -rf bin/server.dart
+	@docker stop $(CONTAINER_NAME) || true
+	@docker rm $(CONTAINER_NAME) || true
+	@docker rmi $(IMAGE_NAME):$(IMAGE_TAG) || true
 
-run: build
-	dart run bin/server.dart --port=$(PORT) --target=$(FUNCTION_TARGET)
 
 # Add a target to test the endpoint with curl
 # Run 'make run' in one terminal, then 'make test-curl' in another.
-.PHONY: test-curl
 test-curl:
 	curl http://localhost:$(PORT)/
+
+# Docker targets
+docker-build:
+	docker build --no-cache --build-arg OLLAMA_MODELS=$(OLLAMA_MODELS_ARG) -t $(IMAGE_NAME):$(IMAGE_TAG) .
+
+docker-run:
+	docker run -p $(PORT):$(PORT) --name $(CONTAINER_NAME) $(IMAGE_NAME):$(IMAGE_TAG)

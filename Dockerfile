@@ -1,29 +1,27 @@
-# Official Dart image: https://hub.docker.com/_/dart
-# Specify the Dart SDK base image version using dart:<version> (ex: dart:2.14)
-FROM dart:stable AS build
 
-# Resolve app dependencies.
-WORKDIR /app
-COPY pubspec.* ./
-RUN dart pub get
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
-# Copy app source code and AOT compile it.
-COPY . .
-# Ensure packages are still up-to-date if anything has changed
-RUN dart pub get --offline
-RUN dart pub run build_runner build --delete-conflicting-outputs
-RUN dart compile exe bin/server.dart -o bin/server
+# Define build argument for models to preload
+ARG MODELS="gemma3:4b gemma3:27b"
+ENV OLLAMA_MODELS=/data/ollama-models
 
-# Build minimal serving image from AOT-compiled `/server` and required system
-# libraries and configuration files stored in `/runtime/` from the build stage.
-FROM scratch
-COPY --from=build /runtime/ /
-COPY --from=build /app/bin/server /app/bin/
-COPY --from=build /app/pubspec.yaml /app/pubspec.yaml
+# install ollama
+RUN apt-get update && apt-get install -y curl procps && \
+    curl -fsSL https://ollama.com/install.sh | sh && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and cache models during build using the build argument
+RUN sh -c 'ollama serve & sleep 5 && for model in $MODELS; do ollama pull $model; done && pkill ollama'
 
 # Set the working directory
-WORKDIR /app
+
+# Keep Ollama models loaded
+ENV OLLAMA_KEEP_ALIVE=-1
+
+# Set Ollama host and port
+ENV OLLAMA_HOST=0.0.0.0:8080
+ENV OLLAMA_MODELS=/data/ollama-models
 
 # Start server.
 EXPOSE 8080
-ENTRYPOINT ["/app/bin/server"]
+ENTRYPOINT ["sh", "-c", "ollama serve"]
