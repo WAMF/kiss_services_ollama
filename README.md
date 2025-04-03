@@ -1,13 +1,13 @@
 # KISS Services Ollama
 
-A simple Dart service designed to expose functionality from Ollama models.
+A cloud run service that runs Ollama
 
 ## Building the Service
 
 To build the Docker image for this service, run the following command in the project directory:
 
 ```shell
-docker build -t kiss-services-ollama .
+docker build -t ollama-server .
 ```
 
 ## Running Locally
@@ -15,7 +15,7 @@ docker build -t kiss-services-ollama .
 Once the image is built, you can run the service locally using Docker:
 
 ```shell
-docker run -p 8080:8080 kiss-services-ollama
+docker run -p 8080:8080 ollama-server
 ```
 
 The service will be accessible at `http://localhost:8080`. You can test it by sending a GET request:
