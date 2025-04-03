@@ -21,10 +21,15 @@ docker run -p 8080:8080 ollama-server
 The service will be accessible at `http://localhost:8080`. You can test it by sending a GET request:
 
 ```shell
-curl http://localhost:8080
+curl http://localhost:8080/api/generate -d '{
+  "model": "gemma3:4b", 
+  "prompt":"Why is the sky blue?"                               
+}'
 ```
 
 Currently, this will return the service version specified in `pubspec.yaml`.
+
+Checkout the Ollama api docs `https://github.com/ollama/ollama/blob/main/docs/api.md`
 
 ## Deploy
 
